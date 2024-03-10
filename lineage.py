@@ -180,48 +180,6 @@ def get_data(region : str, start_date : str = '2019-12-20', end_date : str = '',
 	
 	return data
 
-# def update_data(region, cache_file = '', query_interval = 7, retry_times = 5, cached = True):
-# 	if cache_file == '' or cache_file is None:
-# 		filenames = os.listdir()
-# 		r = re.compile('data {}'.format(region))
-# 		cache_files = list(filter(r.match, filenames))
-
-# 		if len(cache_files) == 0:
-# 			return get_data(region = region, query_interval = query_interval, retry_times = retry_times)
-# 		else:
-# 			cache_file = cache_files[0]
-
-# 	# 读取旧文件
-# 	data = pd.read_csv(cache_file)
-
-# 	start_date = date.fromisoformat(cache_file.split(' ')[2])
-# 	end_date = date.today()
-
-# 	# 新缓存文件
-# 	new_cache_file = 'data ' + region + ' ' + str(start_date) + ' ' + str(end_date) + '.csv'
-
-# 	print('Querying recently collected sequences...')
-# 	new_data_collect = get_data(region = region, start_date = str(date.fromisoformat(data['collectDate'].max()) - timedelta(days = 14)), end_date = str(end_date), query_interval = query_interval, retry_times = retry_times, cached = False, is_collect_date = True)
-# 	print('Querying recently submitted sequences...')
-# 	new_data_submit = get_data(region = region, start_date = str(date.fromisoformat(data['submitDate'].max()) - timedelta(days = 14)), end_date = str(end_date), query_interval = query_interval, retry_times = retry_times, cached = False, is_collect_date = False)
-	
-# 	# 删除奇怪的换行
-# 	new_data_collect = new_data_collect.replace(r'\r+|\n+|\t+','', regex = True)
-# 	new_data_submit = new_data_submit.replace(r'\r+|\n+|\t+','', regex = True)
-
-# 	data = pd.concat([data, new_data_collect, new_data_submit])
-# 	data = data.sort_values(by = ['collectDate', 'lineage'], ascending = True)
-# 	# 去重
-# 	data = data.drop_duplicates(subset = ['accession'])
-# 	data = data.reset_index(drop = True)
-# 	if cached:
-# 		data.to_csv(new_cache_file, index = False)
-# 		os.remove(cache_file)
-
-# 	print('Done. After duplicating, #Total Sequences: {}\n'.format(len(data)))
-
-# 	return data
-
 @timer		
 def process_lineage(data, grain = 'FINE', start_date = '2019-12-24', end_date = '', interval = 14, step = 1, query_start_date = '2019-12-24'):
 	end_date = date.today() if end_date == '' else date.fromisoformat(end_date)
@@ -236,26 +194,21 @@ def process_lineage(data, grain = 'FINE', start_date = '2019-12-24', end_date = 
 	# 替换别名
 	alias_dict = {
 					'AA': 'B.1.177.15', 'AB': 'B.1.160.16', 'AC': 'B.1.1.405', 'AD': 'B.1.1.315', 'AE': 'B.1.1.306', 'AF': 'B.1.1.305', 'AG': 'B.1.1.297', 'AH': 'B.1.1.241', 'AJ': 'B.1.1.240', 'AK': 'B.1.1.232', 'AL': 'B.1.1.231', 'AM': 'B.1.1.216', 'AN': 'B.1.1.200', 'AP': 'B.1.1.70', 'AQ': 'B.1.1.39', 'AS': 'B.1.1.317', 'AT': 'B.1.1.370', 'AU': 'B.1.466.2', 'AV': 'B.1.1.482', 'AW': 'B.1.1.464', 'AY': 'B.1.617.2', 'AZ': 'B.1.1.318', 
-					'BB': 'B.1.621.1', 'BC': 'BA.1.1.1', 'BD': 'BA.1.17.2', 'BE': 'BA.5.3.1', 'BF': 'BA.5.2.1', 'BG': 'BA.2.12.1', 'BH': 'BA.2.38.4', 'BJ': 'BA.2.10.1', 'BK': 'BA.5.1.10', 'BL': 'BA.2.75.1', 'BM': 'BA.2.75.3', 'BN': 'BA.2.75.5', 'BP': 'BA.2.3.16', 'BR': 'BA.2.75.4', 'BS': 'BA.2.3.2', 'BT': 'BA.5.1.21', 'BU': 'BA.5.2.16', 'BV': 'BA.5.2.20', 'BW': 'BA.5.6.2', 'BY': 'BA.2.75.6', 'BZ': 'BA.5.2.3',
-					'C': 'B.1.1.1', 'CA': 'BA.2.75.2', 'CB': 'BA.2.75.9', 'CC': 'BA.5.3.1.1.1.2', 'CD': 'BA.5.2.31', 'CE': 'BA.5.2.33', 'CF': 'BA.5.2.27', 'CG': 'BA.5.2.26', 
-					# 'CH': '',
-					'CJ': 'BA.2.75.3.1.1.1', 'CK': 'BA.5.2.24', 'CL': 'BA.5.1.29', 'CM': 'BA.2.3.20', 'CN': 'BA.5.2.21', 'CP': 'BA.5.2.6', 'CQ': 'BA.5.3.1.4.1.1', 'CR': 'BA.5.2.18', 'CS': 'BA.4.1.11', 'CT': 'BA.5.2.36', 'CU': 'BA.5.1.26', 'CV': 'BA.2.75.3.1.1.3', 'CW': 'BQ.1.1.14', 'CY': 'BA.5.2.7', 'CZ': 'BQ.1.1.1',
-					'D': 'B.1.1.25', 'DA': 'BA.5.2.38', 'DB': 'BA.5.2.25', 'DC': 'BA.4.6.5', 'DD': 'BA.2.3.21', 'DE': 'BA.5.1.23', 'DF': 'BA.5.10.1', 'DG': 'BA.5.2.24.2.1.1', 'DH': 'BA.5.1.22', 'DJ': 'BA.5.1.25', 'DK': 'BQ.1.1.7', 'DL': 'BA.5.1.16', 'DM': 'BQ.1.1.15', 'DN': 'BQ.1.1.5', 'DP' : 'BQ.1.1.8', 'DQ': 'BA.5.2.47', 'DR': 'BQ.1.1.3', 'DS': 'BA.2.75.5.1.3.1', 'DT': 'BQ.1.1.32', 'DU': 'BQ.1.1.2', 
-					# 'DV': 'CH.1.1.1', 
-					'DW': 'BA.5.3.1.1.2.1','DY': 'BA.5.2.48', 'DZ': 'BA.5.2.49', 
-					'EA': 'BQ.1.1.52', 'EB': 'BA.5.1.35', 'EC': 'BQ.1.10.1', 'ED': 'BQ.1.1.18', 'EE': 'BQ.1.1.4', 'EF': 'BQ.1.1.13', 
+					'BB': 'B.1.621.1', 'BC': 'BA.1.1.1', 'BD': 'BA.1.17.2', 'BE': 'BA.5.3.1', 'BF': 'BA.5.2.1', 'BG': 'BA.2.12.1', 'BH': 'BA.2.38.4', 'BJ': 'BA.2.10.1', 'BK': 'BA.5.1.10', 'BL': 'BA.2.75.1', 'BM': 'BA.2.75.3', 'BN': 'BA.2.75.5', 'BP': 'BA.2.3.16', 'BQ': 'BA.5.3.1.1.1.1.1', 'BR': 'BA.2.75.4', 'BS': 'BA.2.3.2', 'BT': 'BA.5.1.21', 'BU': 'BA.5.2.16', 'BV': 'BA.5.2.20', 'BW': 'BA.5.6.2', 'BY': 'BA.2.75.6', 'BZ': 'BA.5.2.3',
+					'C': 'B.1.1.1', 'CA': 'BA.2.75.2', 'CB': 'BA.2.75.9', 'CC': 'BA.5.3.1.1.1.2', 'CD': 'BA.5.2.31', 'CE': 'BA.5.2.33', 'CF': 'BA.5.2.27', 'CG': 'BA.5.2.26', 'CH': 'BA.2.75.3.4.1.1', 'CJ': 'BA.2.75.3.1.1.1', 'CK': 'BA.5.2.24', 'CL': 'BA.5.1.29', 'CM': 'BA.2.3.20', 'CN': 'BA.5.2.21', 'CP': 'BA.5.2.6', 'CQ': 'BA.5.3.1.4.1.1', 'CR': 'BA.5.2.18', 'CS': 'BA.4.1.11', 'CT': 'BA.5.2.36', 'CU': 'BA.5.1.26', 'CV': 'BA.2.75.3.1.1.3', 'CW': 'BA.5.3.1.1.1.1.1.1.1.14', 'CY': 'BA.5.2.7', 'CZ': 'BA.5.3.1.1.1.1.1.1.1.1',
+					'D': 'B.1.1.25', 'DA': 'BA.5.2.38', 'DB': 'BA.5.2.25', 'DC': 'BA.4.6.5', 'DD': 'BA.2.3.21', 'DE': 'BA.5.1.23', 'DF': 'BA.5.10.1', 'DG': 'BA.5.2.24.2.1.1', 'DH': 'BA.5.1.22', 'DJ': 'BA.5.1.25', 'DK': 'BA.5.3.1.1.1.1.1.1.1.7', 'DL': 'BA.5.1.16', 'DM': 'BA.5.3.1.1.1.1.1.1.1.15', 'DN': 'BA.5.3.1.1.1.1.1.1.1.5', 'DP' : 'BA.5.3.1.1.1.1.1.1.1.8', 'DQ': 'BA.5.2.47', 'DR': 'BA.5.3.1.1.1.1.1.1.1.3', 'DS': 'BA.2.75.5.1.3.1', 'DT': 'BA.5.3.1.1.1.1.1.1.1.32', 'DU': 'BA.5.3.1.1.1.1.1.1.1.2', 'DV': 'BA.2.75.3.4.1.1.1.1.1', 'DW': 'BA.5.3.1.1.2.1','DY': 'BA.5.2.48', 'DZ': 'BA.5.2.49', 
+					'EA': 'BA.5.3.1.1.1.1.1.1.1.52', 'EB': 'BA.5.1.35', 'EC': 'BA.5.3.1.1.1.1.1.1.10.1', 'ED': 'BA.5.3.1.1.1.1.1.1.1.18', 'EE': 'BA.5.3.1.1.1.1.1.1.1.4', 'EF': 'BA.5.3.1.1.1.1.1.1.1.13', 
 					# 'EG': 'XBB.1.9.2', 
-					'EH': 'BQ.1.1.28', 'EJ' : 'BA.2.75.5.1.3.8', 'EK': 'XBB.1.5.13', 'EL': 'XBB.1.5.14', 'EM': 'XBB.1.5.7', 'EN': 'BQ.1.1.46', 'EP': 'BA.2.75.3.1.1.4', 'EQ': 'BA.5.1.33', 'ER': 'BQ.1.1.22', 'ES': 'BQ.1.1.65', 'ET': 'BQ.1.1.35', 'EU': 'XBB.1.5.26', 'EV': 'BQ.1.1.71', 'EW': 'BQ.1.1.38', 'EY': 'BQ.1.13.1.1.1', 'EZ': 'BQ.1.1.43',
-					'FA': 'BQ.1.1.10', 'FB': 'BQ.1.2.1', 'FC': 'BQ.1.1.72', 'FD': 'XBB.1.5.15', 'FE': 'XBB.1.18.1', 'FF': 'BQ.1.8.2', 'FG': 'XBB.1.5.16', 'FH': 'XBB.1.5.17', 'FJ': 'CH.1.1.19', 'FK': 'CH.1.1.17', 'FL': 'XBB.1.9.1', 'FM': 'BQ.1.1.53', 'FN': 'BQ.1.1.74', 'FP': 'XBB.1.11.1', 'FQ': 'BQ.1.1.39', 'FR': 'BA.2.75.5.1.2.3', 'FS': 'CH.1.1.12', 'FT': 'XBB.1.5.39', 'FU': 'XBB.1.16.1', 'FV': 'BA.2.3.20.8.1.1', 'FW': 'XBB.1.28.1', 'FY': 'XBB.1.22.1', 'FZ': 'XBB.1.5.47',
-					'G': 'B.1.258.2', 'GA': 'XBB.1.17.1', 'GB': 'XBB.1.5.46', 'GC': 'XBB.1.5.21', 'GD': 'XBB.1.9.3', 'GE': 'XBB.2.3.10', 'GF': 'XBB.1.5.24', 'GG': 'XBB.1.5.38', 'GH': 'XBB.2.6.1', 'GJ': 'XBB.2.3.3', 'GK': 'XBB.1.5.70', 'GL': 'XAY.1.1.1', 'GM': 'XBB.2.3.6', 'GN': 'XBB.1.5.73', 'GP': 'CH.1.1.11', 'GQ': 'CH.1.1.3', 'GR': 'BA.5.2.18', 'GS': 'XBB.2.3.11', 'GT': 'XBC.1.6.1', 'GU': 'XBB.1.5.41', 'GV': 'XBB.1.5.48', 'GW': 'XBB.1.19', 'GY': 'XBB.1.16.2', 'GZ': 'XBB.2.3.4',
+					'EH': 'BA.5.3.1.1.1.1.1.1.1.28', 'EJ' : 'BA.2.75.5.1.3.8', 'EK': 'XBB.1.5.13', 'EL': 'XBB.1.5.14', 'EM': 'XBB.1.5.7', 'EN': 'BA.5.3.1.1.1.1.1.1.1.46', 'EP': 'BA.2.75.3.1.1.4', 'EQ': 'BA.5.1.33', 'ER': 'BA.5.3.1.1.1.1.1.1.1.22', 'ES': 'BA.5.3.1.1.1.1.1.1.1.65', 'ET': 'BA.5.3.1.1.1.1.1.1.1.35', 'EU': 'XBB.1.5.26', 'EV': 'BA.5.3.1.1.1.1.1.1.1.71', 'EW': 'BA.5.3.1.1.1.1.1.1.1.38', 'EY': 'BA.5.3.1.1.1.1.1.1.13.1.1.1', 'EZ': 'BA.5.3.1.1.1.1.1.1.1.43',
+					'FA': 'BA.5.3.1.1.1.1.1.1.1.10', 'FB': 'BA.5.3.1.1.1.1.1.1.2.1', 'FC': 'BA.5.3.1.1.1.1.1.1.1.72', 'FD': 'XBB.1.5.15', 'FE': 'XBB.1.18.1', 'FF': 'BA.5.3.1.1.1.1.1.1.8.2', 'FG': 'XBB.1.5.16', 'FH': 'XBB.1.5.17', 'FJ': 'BA.2.75.3.4.1.1.1.1.19', 'FK': 'BA.2.75.3.4.1.1.1.1.17', 'FL': 'XBB.1.9.1', 'FM': 'BA.5.3.1.1.1.1.1.1.1.53', 'FN': 'BA.5.3.1.1.1.1.1.1.1.74', 'FP': 'XBB.1.11.1', 'FQ': 'BA.5.3.1.1.1.1.1.1.1.39', 'FR': 'BA.2.75.5.1.2.3', 'FS': 'BA.2.75.3.4.1.1.1.1.12', 'FT': 'XBB.1.5.39', 'FU': 'XBB.1.16.1', 'FV': 'BA.2.3.20.8.1.1', 'FW': 'XBB.1.28.1', 'FY': 'XBB.1.22.1', 'FZ': 'XBB.1.5.47',
+					'G': 'B.1.258.2', 'GA': 'XBB.1.17.1', 'GB': 'XBB.1.5.46', 'GC': 'XBB.1.5.21', 'GD': 'XBB.1.9.3', 'GE': 'XBB.2.3.10', 'GF': 'XBB.1.5.24', 'GG': 'XBB.1.5.38', 'GH': 'XBB.2.6.1', 'GJ': 'XBB.2.3.3', 'GK': 'XBB.1.5.70', 'GL': 'XAY.1.1.1', 'GM': 'XBB.2.3.6', 'GN': 'XBB.1.5.73', 'GP': 'BA.2.75.3.4.1.1.1.1.11', 'GQ': 'BA.2.75.3.4.1.1.1.1.3', 'GR': 'BA.5.2.18', 'GS': 'XBB.2.3.11', 'GT': 'XBC.1.6.1', 'GU': 'XBB.1.5.41', 'GV': 'XBB.1.5.48', 'GW': 'XBB.1.19', 'GY': 'XBB.1.16.2', 'GZ': 'XBB.2.3.4',
 					'HA': 'XBB.1.5.86', 'HB': 'XBB.1.34.2', 'HC': 'XBB.1.5.44', 'HD': 'XBB.1.5.93', 'HE': 'XBB.1.18.1.1.1.1', 'HF': 'XBB.1.16.13', 'HG': 'XBB.2.3.8', 'HH': 'XBB.2.3.2', 'HJ': 'XBB.1.5.1', 'HK': 'EG.5.1.1', 'HL': 'XBB.1.42.2', 'HM': 'XBB.1.5.30', 'HN': 'XBB.1.9.1.1.5.1', 'HP': 'XBB.1.5.55', 'HQ': 'XBB.1.5.92', 'HR': 'XBB.1.5.77', 'HS': 'XBB.1.5.95', 'HT': 'XBB.1.5.49', 'HU': 'XBB.1.22.2', 'HV': 'EG.5.1.6', 'HW': 'XBC.1.6.3', 'HY': 'XBB.1.5.100', 'HZ': 'XBB.1.5.68', 
-					'JA': 'XBB.2.3.13', 'JB': 'XBB.1.5.53', 'JC': 'XBB.1.41.1', 'JD': 'XBB.1.5.102', 'JE': 'XBB.2.3.3.1.2.1', 'JF': 'XBB.1.16.6', 'JG': 'EG.5.1.3', 'JH': 'BQ.1.2.2', 'JJ': 'EG.5.1.4', 'JK': 'XBB.1.5.3', 'JL': 'CH.1.1.17.1.3.2', 'JM': 'XBB.1.16.15', 'JN': 'BA.2.86.1', 'JP': 'CH.1.1.31', 'JQ': 'BA.2.86.3', 'JR': 'EG.5.1.11', 'JS': 'XBB.2.3.15', 'JT': 'XBC.1.6.6', 'JU': 'XBB.2.3.12', 'JV': 'CH.1.1.1.7.1.2', 'JW': 'XBB.1.41.3', 'JY': 'XBB.2.3.19', 'JZ': 'XBB.1.5.107', 
-					'K': 'B.1.1.277', 'KA': 'XBB.1.5.103', 'KB': 'EG.5.1.8', 'KC': 'XBB.1.9.1.1.5.2', # 2023.11.29
+					'JA': 'XBB.2.3.13', 'JB': 'XBB.1.5.53', 'JC': 'XBB.1.41.1', 'JD': 'XBB.1.5.102', 'JE': 'XBB.2.3.3.1.2.1', 'JF': 'XBB.1.16.6', 'JG': 'EG.5.1.3', 'JH': 'BA.5.3.1.1.1.1.1.1.2.2', 'JJ': 'EG.5.1.4', 'JK': 'XBB.1.5.3', 'JL': 'BA.2.75.3.4.1.1.1.1.17.1.3.2', 'JM': 'XBB.1.16.15', 
+					# 'JN': 'BA.2.86.1', 
+					'JP': 'BA.2.75.3.4.1.1.1.1.31', 'JQ': 'BA.2.86.3', 'JR': 'EG.5.1.11', 'JS': 'XBB.2.3.15', 'JT': 'XBC.1.6.6', 'JU': 'XBB.2.3.12', 'JV': 'BA.2.75.3.4.1.1.1.1.1.7.1.2', 'JW': 'XBB.1.41.3', 'JY': 'XBB.2.3.19', 'JZ': 'XBB.1.5.107', 
+					'K': 'B.1.1.277', 'KA': 'XBB.1.5.103', 'KB': 'EG.5.1.8', 'KC': 'XBB.1.9.1.1.5.2', 'KD': 'XBC.1.3.1', 'KE': 'XBB.1.19.1.5.1.1', 'KF': 'XBB.1.9.1.15.1.1', 'KG': 'DV.7.1.5', 'KH': 'XBB.2.3.3.1.2.1.1.1.1', 'KJ': 'XBB.1.16.32', 'KK': 'XBB.1.5.102.1.1.8', 'KL': 'XBB.1.9.2.5.1.6.1.6.1', 'KM' : 'XBB.1.5.4', 'KN': 'XBB.1.5.70.1.10.1', 'KP': 'JN.1.11.1', 'KQ': 'JN.1.4.3', # 2024.3.4
 					'L': 'B.1.1.10', 'M': 'B.1.1.294', 'N': 'B.1.1.38', 'P': 'B.1.1.28', 'Q': 'B.1.1.7', 'R': 'B.1.1.316', 'S': 'B.1.1.217', 'U': 'B.1.177.60', 'V': 'B.1.177.54', 'W': 'B.1.177.53', 'Y': 'B.1.177.52', 'Z': 'B.1.177.50'
 				}
-	# 粗粒度条件下, 将较为流行的毒株合并
-	if grain == 'COARSE':
-		alias_dict.update({'BQ': 'BA.5.3.1.1.1.1.1', 'CH': 'BA.2.75.3.4.1.1'})
 	for lineage in tqdm(alias_dict.keys(), desc = 'Alias'):
 		# "L".X -> "Expand L".X
 		lineages[lineages.str.startswith(lineage + '.')] = alias_dict[lineage]
@@ -263,16 +216,16 @@ def process_lineage(data, grain = 'FINE', start_date = '2019-12-24', end_date = 
 	# 合并谱系, 注意前缀关系
 	# 合并谱系 (重组谱系 - Omicron 时代 - Delta 时代 - 前 Delta 时代)
 	if grain in ['ALL', 'FINE']:
-		lineage_list = ['XBB.1.16', 'XBB.1.5', 'XBB.1.9.1', 'XBB.1.9.2', 'EG.5', 'XBB.1.22', 'XBB.2.3', 'BA.2.86', 'DV.7'] + ['BA.2', 'BA.5', 'BQ.1', 'CH.1.1'] + ['A', 'B.1.1.529', 'B.1.1.7', 'B.1.617.2']
+		lineage_list = ['XDD', 'JN.1', 'BA.2.86', 'EG.5'] + ['XBB.1.16', 'XBB.1.5', 'XBB.1.9.1', 'XBB.1.9.2', 'XBB.2.3'] + ['BA.2', 'BA.5', 'BA.5.3.1.1.1.1.1.1', 'CH.1.1'] + ['A', 'B.1.1.529', 'B.1.1.7', 'B.1.617.2']
 	else:
-		lineage_list = ['XBB', 'BQ.1', 'BA.2', 'BA.5'] + ['A', 'B.1.1.529', 'B.1.1.7', 'B.1.617.2']
+		lineage_list = ['XBB', 'BA.2', 'BA.5'] + ['A', 'B.1.1.529', 'B.1.1.7', 'B.1.617.2']
 	for lineage in tqdm(lineage_list, desc = 'Merge I'):
 		# 不以 * 结尾, 即没有被合并过的
 		lineages[(lineages.str.startswith(lineage + '.')) & (~lineages.str.endswith('*'))] = lineage + '*'
 		lineages[lineages == lineage] = lineage + '*'
 	
 	# 合并谱系 (已经有子代被合并过的, 注意从底向上)
-	lineage_dict = {'XBB': 'XBB*', 'EG': 'XBB.1.9.2*', 'DV': 'CH.1.1.1*','BQ': 'BQ.*', 'CH': 'CH.*', 'BA': 'BA.*', 'B': 'B*'}
+	lineage_dict = {'XBB': 'XBB*', 'EG': 'XBB.1.9.2*', 'BQ': 'BQ.*', 'CH': 'CH.*', 'BA': 'BA.*', 'B': 'B*'}
 	for lineage in tqdm(lineage_dict.keys(), desc = 'Merge II'):
 		# 替换
 		lineages[(lineages.str.startswith(lineage + '.')) & (~lineages.str.endswith('*'))] = lineage_dict[lineage]
@@ -282,8 +235,8 @@ def process_lineage(data, grain = 'FINE', start_date = '2019-12-24', end_date = 
 	lineages[(lineages.str.startswith('X')) & (~lineages.str.endswith('*'))] = 'Other Recombinants'
 
 	# 标记 VOI, VUM
-	VOIs_list = ['XBB.1.5', 'XBB.1.16', 'EG.5', 'BA.2.86']
-	VUMs_list = ['DV.7', 'XBB.1.22', 'XBB', 'XBB.1.9.1', 'XBB.1.9.2', 'XBB.2.3']
+	VOIs_list = ['XBB.1.5', 'XBB.1.16', 'EG.5', 'BA.2.86', 'JN.1']
+	VUMs_list = ['XBB', 'XBB.1.9.1', 'XBB.1.9.2', 'XBB.2.3']
 
 	for lineage in tqdm(VOIs_list, desc = 'VOI'):
 		lineages[lineages.str.startswith(lineage + '*')] = lineage + '* (VOI)'
@@ -352,7 +305,7 @@ def visualize(region, data_lineages, data_num_seqs, grain, data_interval):
 	sns.set_theme()
 	sns.set_palette('Spectral', n_colors = n_colors)
 
-	fig = plt.figure(figsize = (20, 10))
+	fig = plt.figure(figsize = (12, 8))
 	ax = fig.add_subplot(111)
 
 	# ax = data_lineages.plot(kind = 'bar', ax = ax, stacked = True, ylim = (0.0, 100.0), linewidth = 0.0, edgecolor = None, width = 1.0)
@@ -363,7 +316,7 @@ def visualize(region, data_lineages, data_num_seqs, grain, data_interval):
 	# plt.xticks(rotation = 75)
 	# 共用 y 轴
 	ax_seq = ax.twinx()
-	ax_seq = data_num_seqs.plot(kind = 'line', ax = ax_seq, color = 'black')
+	ax_seq = data_num_seqs.plot(kind = 'line', ax = ax_seq, color = 'black', linewidth = 1.0)
 	# ax_seq.set_yscale('log')
 	ax_seq.set_ylabel('# Uploaded Sequences')
 	ax_seq.set_ylim(bottom = 0.0)
@@ -372,11 +325,11 @@ def visualize(region, data_lineages, data_num_seqs, grain, data_interval):
 	# 隐藏格线
 	ax.grid(False)
 	ax_seq.grid(False)
-	ax.legend(bbox_to_anchor = (1.18, 1.0), loc = 'upper right', borderaxespad = 0)
+	ax.legend(bbox_to_anchor = (1.3, 1.0), loc = 'upper right', borderaxespad = 0)
 	# ax.legend(bbox_to_anchor = (.5, -0.1), loc = 'lower center', borderaxespad = 0, ncols = n_colors)
 	ax_seq.get_legend().remove()
 
-	plt.title('{} SARS-CoV-2 Lineage Distribution (Interval = Previous {} Days, by G.Cui)'.format('China (Mainland)' if region == 'ChinaMainland' else region, data_interval), fontsize = 18)
+	plt.title('{} SARS-CoV-2 Variant Proportion ({}-Day Sliding Window)'.format('China (Mainland)' if region == 'ChinaMainland' else region, data_interval), fontsize = 16)
 	plt.savefig('{}-{}.png'.format(region, grain.lower()), dpi = 300, bbox_inches = 'tight')
 	
 	plt.show()
@@ -385,7 +338,6 @@ def print_usage():
 	print()
 	print('Usage:')
 	print('Get data from scratch:\n\tGET <region> [FROM <start_date>] [TO <end_date>] [INTERVAL <interval>]')
-	# print('Update data from cache file:\n\tUPDATE <region> [FROM <start_date>] [TO <end_date>] [INTERVAL <interval>]')
 	print('Process lineages and visualize:\n\tVISUALIZE [ALL | FINE | COARSE] [FROM <start_date>] [TO <end_date>] [INTERVAL <interval>] [STEP <step>]')
 	print('Get help:\n\tHELP')
 	print('Exit / Quit:\n\tEXIT / QUIT')
@@ -394,7 +346,7 @@ def print_usage():
 
 if __name__ == '__main__':
 	print('+----------------------------------------------------------------+')
-	print('|      SARS-CoV-2 Interactive Lineage Distribution Analysis      |')
+	print('|            SARS-CoV-2 Interactive Variant Proportion           |')
 	print('|                      Ver. 1.0.0, by G.Cui                      |')
 	print('+----------------------------------------------------------------+')
 	print_usage()
@@ -431,14 +383,14 @@ if __name__ == '__main__':
 				elif token.upper() == 'HELP':
 					state = 'HELP'
 					break
-				if token.upper() in ['GET', 'UPDATE']:
-					state = 'GOT_GET_OR_UPDATE'
+				if token.upper() == 'GET':
+					state = 'GOT_GET'
 				elif token.upper() == 'VISUALIZE':
 					state = 'GOT_VISUALIZE'
 				else:
 					state = 'REJECT'
 					break
-			elif state == 'GOT_GET_OR_UPDATE':
+			elif state == 'GOT_GET':
 				region = token.replace('_', ' ')
 				state = 'GOT_REGION'
 			elif state == 'GOT_REGION':
